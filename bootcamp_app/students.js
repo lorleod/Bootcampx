@@ -1,5 +1,18 @@
 const { Pool } = require('pg');
-const args = process.argv.slice(2);
+const cohortName = process.argv[2];
+const limit = process.argv[3] || 5;
+
+// Store all potentially malicious values in an array.
+const values = [`%${cohortName}%`, limit]
+
+const queryString = `
+SELECT students.id as student_id, students.name as name, cohorts.name as cohort
+FROM students
+JOIN cohorts ON students.cohort_id = cohorts.id
+WHERE cohorts.name LIKE $1
+LIMIT $2;
+`;
+
 
 const pool = new Pool({
   user: 'vagrant',
@@ -8,13 +21,7 @@ const pool = new Pool({
   database: 'bootcampx'
 });
 
-pool.query(`
-SELECT students.id as student_id, students.name as name, cohorts.name as cohort
-FROM students
-JOIN cohorts ON students.cohort_id = cohorts.id
-WHERE cohorts.name LIKE '%${args[0]}%'
-LIMIT ${args[1] || 5};
-`)
+pool.query(queryString, values)
 .then(res => {
   console.log(res.rows);
 })
